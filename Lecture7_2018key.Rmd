@@ -1,0 +1,217 @@
+---
+title: "Lecture 7 - Key"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Multivariate Normal Distribution
+While the normal distribution has two parameters, up to now we have focused on univariate data. Now we will consider multivariate responses from a multivariate normal distribution.
+\vfill
+Example. Consider a study addressing colocated environmental variables. For instance, bacteria concentrations and turbidty measurements in a watershed are likely correlated. We are interested in learning not only the mean and variance terms for each variable, but also the correlation structure between the two variables.
+\vfill
+
+__Multivariate Normal Distribution:__ The multivariate normal distribution has the following sampling distribution:
+\begin{equation*}
+p(\tilde{y}|\tilde{\theta},\Sigma) = (2 \pi)^{-p/2} |\Sigma|^{-1/2} \exp\left[ -(\tilde{y} - \tilde{\theta})^{T} \Sigma^{-1} (\tilde{y} - \tilde{\theta}) / 2 \right] ,
+\end{equation*}
+where
+\begin{equation*}
+\tilde{y} =  \begin{pmatrix}
+  y_{1} \\
+  y_{2} \\
+  \vdots   \\
+  y_{p}
+ \end{pmatrix},
+  \hspace{1.5cm}
+ \tilde{\theta} =  \begin{pmatrix}
+  \theta_{1} \\
+  \theta_{2} \\
+  \vdots   \\
+  \theta_{p}
+ \end{pmatrix},
+  \hspace{1.5cm}
+\Sigma =  \begin{pmatrix}
+  \sigma^2_1 & \sigma_{1,2} & \cdots & \sigma_{1,p} \\
+  \sigma_{1,2} & \sigma^2_{2} & \cdots & \sigma_{2,p} \\
+  \vdots  & \vdots  & \ddots & \vdots  \\
+  \sigma_{1,p} & \sigma_{2,p} & \cdots & \sigma^2_{p} 
+ \end{pmatrix} 
+\end{equation*}
+The vector $\tilde{\theta}$ is the mean vector and the matrix $\Sigma$ is the covariance matrix, where the diagonal elements are the variance terms for observation $i$ and the off diagonal elements are the covariance terms between observation $i$ and $j$.
+\vfill
+Marginally, each  $y_i \sim N(\theta_i, \sigma^2_i).$ 
+\vfill
+
+#### Linear Algebra Review
+-  Let $A$ be a matrix, then $|A|$ is the *determinant* of A. For a $2 \times 2$ matrix $A=\begin{pmatrix}
+a & b\\
+c & d
+\end{pmatrix}$, $|A| = ad - bc$. The R command `det(.)` will calculate the determinant of a matrix.
+\vfill
+\newpage
+- Let $A$ be a matrix, then $A^{-1}$ is the __inverse__ of A such that $A A^{-1} = I_p$ where $I_p$ is the identity matrix of dimension $p$. The R function `solve(.)` will return the inverse of the matrix. Note that this can be computationally difficult, so whenever possible avoid computing this in every iteration of a sampler.
+\vfill
+- Let $\tilde{\theta}$ be a vector of dimension $p \times 1$, $\theta = \begin{pmatrix} 
+\theta_1 \\
+\theta_2 \\
+\vdots \\
+\theta_p
+\end{pmatrix}$, then the transpose of $\theta$, denoted $\theta^T$ is a vector of dimension $1 \times p$. Then $\theta^T = (\theta_1, \theta_2, \cdots, \theta_p).$ The R function `t(.)` will compute the transpose of a vector or matrix.
+\vfill
+- Let $A$ be a $n \times p$ matrix and $B$ be a $p \times m$ matrix, then the matrix product, $AB$ will be a $n \times m$ matrix. The element in the $i^{th}$ row and $j^{th}$ column is equal to the vector product of row $i$ of matrix A and column $j$ of matrix B. For vector multiplication in R use the command `\%*\%`, that is `AB <- A \%*\% B`. \vfill
+
+- Let $A$ be a matrix, then the __trace__ of A is the sum of the diagonal elements. A usual property of the trace is that $tr(AB) = tr(BA)$. In R the `matrix.trace(.)` function from the `matrixcalc` package will return the trace.
+\vfill
+- The `mnormt` package in R includes functions `rmnorm, dmnorm` which are multivariate analogs of functions used for a univariate normal distribution.
+
+\vfill
+
+#### Multivariate Normal Exercise
+
+1. Simulate data from two dimensional multivariate normal distributions.
+    a. select a variety of mean and covariance structures and visualize your results.
+    b. how do the mean and covariance structures impact the visualization?
+\vfill
+2. Similar to our earlier exercise using the Gibbs sample on the tri-modal example, create a two-dimensional mixture distribution of multivariate normal distributions and plot your results.
+\vfill
+\newpage
+
+#### Priors for multivariate normal distribution
+In the univariate normal setting, a normal prior for the mean term was _semiconjugate_. Does the same hold for a multivariate setting? Let $p(\tilde{\theta}) \sim N_p(\tilde{\mu}_0,\Lambda_0)$. 
+\begin{eqnarray*}
+p(\tilde{\theta}) &=& (2\pi)^{-p/2} |\Lambda_0|^{-1/2} \exp \left[ -\frac{1}{2}(\tilde{\theta} - \tilde{\mu}_0)^{T} \Lambda_0^{-1} (\tilde{\theta} - \tilde{\mu_0})\right]\\
+&\propto& \exp \left[ -\frac{1}{2}(\tilde{\theta} - \tilde{\mu}_0)^{T} \Lambda_0^{-1} (\tilde{\theta} - \tilde{\mu_0})\right]\\
+&&\\
+&\propto& \exp\left[ -\frac{1}{2}\left(\tilde{\theta}^{T} \Lambda_0^{-1}\tilde{\theta} - \tilde{\theta}^{T} \Lambda_0^{-1}\tilde{\mu_0} + \dots\right) \right]
+\end{eqnarray*}
+Now combine this with the sampling model, only retaining the elements that contain $\theta$.
+\begin{eqnarray*}
+p(\tilde{y}_1, \dots, \tilde{y}_n|\tilde{\theta},\Sigma) & \propto & \prod_{i=1}^n \exp\left[-\frac{1}{2} (\tilde{y_i} - \tilde{\theta})^T \Sigma^{-1} (\tilde{y_i} - \tilde{\theta}) \right]\\
+&\propto& \exp\left[-\frac{1}{2} \sum_{i=1}^n (\tilde{y_i} - \tilde{\theta})^T \Sigma^{-1} (\tilde{y_i} - \tilde{\theta}) \right]\\
+&&\\
+& \propto & \exp \left[-\frac{1}{2} \left( \tilde{\theta}^Tn \Sigma^{-1} \tilde{\theta} - \tilde{\theta}^T \Sigma^{-1} \sum_{i=1}^n \tilde{y}_i \right) \right] \hspace{8cm}
+\end{eqnarray*}
+Next we find the full conditional distribution for $\theta$, $p(\tilde{\theta}|\Sigma, \tilde{y}_1, \dots, \tilde{y}_n)$.
+\begin{eqnarray*}
+p(\tilde{\theta}|\Sigma, \tilde{y}_1, \dots, \tilde{y}_n) &\propto & \exp \left[-\frac{1}{2}\left( \tilde{\theta}^Tn \Sigma^{-1} \tilde{\theta} - \tilde{\theta}^T \Sigma^{-1} \sum_{i=1}^n \tilde{y}_i - \sum_{i=1}^n \tilde{y}_i^T \Sigma^{-1} \tilde{\theta} + \tilde{\theta}^T \Lambda_0^{-1} \tilde{\theta} -\tilde{\theta}^T \Lambda_0^{-1} \tilde{\mu_0} - \tilde{\mu_0}^T \Lambda_0^{-1} \tilde{\theta} \right)  \right] \\
+&\propto & \exp \left[-\frac{1}{2}\left(\tilde{\theta}^T (n \Sigma^{-1} + \Lambda_0^{-1}) \tilde{\theta} - \tilde{\theta}^T(\Sigma^{-1} \sum_{i=1}^n \tilde{y}_i + \Lambda_0^{-1} \tilde{\mu}_0) - c \tilde{\theta} \right) \right]\\
+&& \text{it turns out we can drop the term $c \tilde{\theta}$}\\
+&&\\
+&\propto & \exp  \\
+&&\\
+&& \text{and we have a similar result to that found earlier for a univariate normal}
+\end{eqnarray*}
+The variance (matrix) is $A^{-1}$ and the expectation is $A^{-1} B$.
+\vfill
+Hence the full conditional follows a multivariate normal distribution with variance $\Lambda_n = (n \Sigma^{-1} + \Lambda_0^{-1})^{-1}$ and expectation= $\tilde{\mu}_n = (n \Sigma^{-1} + \Lambda_0^{-1})^{-1} \times (\Sigma^{-1} \sum_{i=1}^n \tilde{y}_i + \Lambda_0^{-1} \tilde{\mu}_0)$. 
+\vfill
+\newpage
+Sometimes a uniform prior $p(\tilde{\theta}) \propto \tilde{1}$ is used. In this case the variance and expectation simplify to $V= \Sigma/n$ and $E = \bar{\tilde{y}}$.
+\vfill
+Using this semiconjugate prior in a Gibbs sampler we can make draws from the full conditional distribution using `rmnorm(.)` in R. However, we still need to be able to take samples of the covariance matrix $\Sigma$ to get draws from the joint posterior distribution.
+\vfill
+
+#### Inverse-Wishart Distribution
+A covariance matrix $\Sigma =  \begin{pmatrix}
+  \sigma^2_1 & \sigma_{1,2} & \cdots & \sigma_{1,p} \\
+  \sigma_{1,2} & \sigma^2_{2} & \cdots & \sigma_{2,p} \\
+  \vdots  & \vdots  & \ddots & \vdots  \\
+  \sigma_{1,p} & \sigma_{2,p} & \cdots & \sigma^2_{p} 
+ \end{pmatrix}$ has the variance terms on the diagonal and covariance terms for off diagonal elements. 
+\vfill 
+
+Similar to the requirement that $\sigma^2$ be positive, a covariance matrix, $\Sigma$ must be __positive definite__, such that: $\tilde{x}^T \Sigma \tilde{x} > 0$ for all vectors $\tilde{x}$. With a positive definite matrix, the diagonal elements (which correspond the marginal variances $\sigma^2_j$) are greater than zero and it also constrains the correlation terms to be between -1 and 1. \vfill
+A covariance matrix also requires symmetry, so that $Cov(y_i,y_j) = Cov(y_j,y_i)$.
+\vfill
+  The covariance matrix is closely related to the sum of squares matrix with is given by:
+ \begin{equation*}
+ \sum_{i=1}^N \tilde{z}_i \tilde{z}_i^T = Z^T Z,
+ \end{equation*}
+where $z_1, ..., z_n$ are $p \times 1$ vectors containing a multivariate response. 
+\vfill
+Thus $\tilde{z}_i \tilde{z}_i^T$ results in a $p \times p$ matrix, where
+\begin{equation*}
+\tilde{z}_i \tilde{z}_i^T = \begin{pmatrix}
+z_{i,1} ^2 & z_{i,1}z_{i,2} & \hdots & z_{i,1}z_{i,p} \\
+z_{i,2}z_{i,1} & z_{i,2}^2 & \hdots & z_{i,2}z_{i,p} \\
+\vdots & & & \vdots\\
+z_{i,p} z_{i,1} & z_{i,p} z_{i,2} & \hdots & z_{i,p}^2
+\end{pmatrix}
+\end{equation*}
+
+\newpage
+
+Now let the $\tilde{z}_i's$ have zero mean (are centered). Recall that the sample variance is computed as $S^2 = \sum_{i=1}^n (y_i - \bar{y})^2/(n-1) = \sum_{i=1}^n z_i^2/(n-1)$. Similarly the matrix $\tilde{z}_{i} \tilde{z}_{i}^T/n$ is the contribution of the $i^{th}$ observation to the sample covariance. In this case:
+1. $\frac{1}{n}[Z^T Z]_{j,j} = \frac{1}{n} \sum_{i=1}^n z_{i,j}^2 = s_j^2$ That is the diagonal elements of the matrix $Z^T Z$ are an estimate of the marginal sample variances. 
+\vfill
+2. $\frac{1}{n}[Z^T Z]_{j,k} = \frac{1}{n} \sum_{i=1}^n z_{i,j} z_{i,k} = s_{j,k}$ That is the off-diagonal elements of the matrix $Z^T Z$ are estimates of the covariance terms.
+\vfill
+If $n > p$ and the $\tilde{z}_i's$ are linearly independent then $Z^TZ$ will be positive definite and symmetric.
+\vfill
+Consider the following procedure with a positive integer, $\nu_0$, and a $p \times p$ covariance matrix $\Phi_0$:
+1. sample $\tilde{z}_1, \dots , \tilde{z}_{\nu_0} \sim MVN(\tilde{0},\Phi_0)$
+\vfill
+2. calculate $Z^T Z = \sum_{i=1}^{\nu_0} \tilde{z}_i \tilde{z}_i^T$
+\vfill
+then the matrix $Z^T Z$ is a random draw from a __Wishart distribution__ with parameters $\nu_0$ and $\Phi_0$.
+\vfill
+The expectation of $Z^T Z$ is $\nu_0 \Phi_0$. The Wishart distribution can be thought of as a multivariate analogue of the gamma distribution.
+\vfill Accordingly, the Wishart distribution is semi-conjugate for the precision matrix ($\Sigma^{-1}$); whereas, the Inverse-Wishart distribution is semi-conjugate for the covariance matrix. 
+\vfill
+\newpage
+The density of the inverse-Wishart distribution with parameters $S_0^{-1}$, a $p \times p$ matrix and $\nu_0$ ($IW(\nu_0,S_0^{-1})$ is:
+\begin{eqnarray*}
+p(\Sigma) &=& \left[ 2^{\nu_0 p / 2} \pi ^{\binom{p}{n}/2} |S_0|^{-\nu_0/2} \prod_{j=1}^P \Gamma([\nu_0 + 1 - j]/2) \right]^{-1} \times\\
+&& |\Sigma|^{-(\nu_0 +p +1)/2} \times \exp[-tr(S_0 \Sigma^{-1})/2]
+\end{eqnarray*}
+\vfill
+
+#### Inverse Wishart Full Conditional Calculations
+\begin{eqnarray*}
+p(\Sigma|\tilde{y}_1, \dots, \tilde{y}_n, \tilde{\theta}) &\propto& p(\Sigma) \times p(\tilde{y}_1, \dots, \tilde{y}_n | \Sigma, \tilde{\theta})\\
+&\propto& \left(|\Sigma|^{-(\nu_0 +p+1)/2} \exp[-tr(S_0\Sigma^{-1})/2] \right) \times \left(|\Sigma|^{-n/2} \exp [- \frac{1}{2}\sum_{i=1}^n (\tilde{y}_i - \tilde{\theta})^T \Sigma^{-1} (\tilde{y}_i- \tilde{\theta})] \right)\\
+&& \text{note that $\sum_{i=1}^n (\tilde{y}_i - \tilde{\theta})^T \Sigma^{-1} (\tilde{y}_i- \tilde{\theta})$ is a number so we can apply the trace operator}\\
+&& \text{using properties of the trace, this equals $tr\left(\sum_{i=1}^n (\tilde{y}_i- \tilde{\theta})(\tilde{y}_i - \tilde{\theta})^T \Sigma^{-1}\right) = tr(S_\theta \Sigma^{-1})$}\\
+\text{so } p(\Sigma|\tilde{y}_1, \dots, \tilde{y}_n, \tilde{\theta}) &\propto& \left(|\Sigma|^{-(\nu_0 +p+1)/2} \exp[-tr(S_0\Sigma^{-1})/2] \right) \times \left(|\Sigma|^{-n/2} \exp [-tr( S_\theta \Sigma^{-1}/2)] \right)\\
+&\propto& \left(|\Sigma|^{-(\nu_0+n +p+1)/2} \exp[-tr([S_0+S_\theta]\Sigma^{-1})/2] \right)\\
+\text{thus} \Sigma|\tilde{y}_1, \dots, \tilde{y}_n, \tilde{\theta} &\sim& IW(\nu_0+n, [S_0 + S_\theta]^{-1})
+\end{eqnarray*}
+\vfill
+Thinking about the parameters in the prior distribution, $\nu_0$ is the prior sample size and $S_0$ is the prior residual sum of squares.
+\vfill
+\newpage
+
+#### Gibbs Sampling for $\Sigma$ and $\tilde{\theta}$
+
+We now that the full conditional distributions follow as:
+\begin{eqnarray*}
+\tilde{\theta}|\Sigma, \tilde{y}_1, \dots, \tilde{y}_n &\sim& MVN(\mu_n,\Lambda_n)\\
+\Sigma | \tilde{\theta}, \tilde{y}_1, \dots, \tilde{y}_n &\sim& IW(\nu_n, S_n^{-1}).
+\end{eqnarray*}
+\vfill
+
+Given these full conditional distributions the Gibbs sampler can be implemented as:
+\vfill
+1. Sample $\tilde{\theta}^{(j+1)}$ from the full conditional distribution
+
+a. compute $\tilde{\mu}_n$ and $\Lambda_n$ from $\tilde{y}_1, \dots, \tilde{y}_n$ and $\Sigma^{(j)}$
+\vfill
+b. sample $\tilde{\theta}^{(j+1)} \sim MVN(\tilde{\mu}_n,\Lambda_n)$. This can be done with `rmnorm(.)` in R.
+\vfill
+2. Sample $\Sigma^{(j+1)}$ from its full conditional distribution
+
+a. compute $S_n$ from $\tilde{y}_1, \dots, \tilde{y}_n$ and $\tilde{\theta}^{(j+1)}$
+\vfill
+b. sample $\Sigma^{(j+1)} \sim IW(\nu_0 +n, S_n^{-1})$
+\vfill
+As $\tilde{\mu}_n$ and $\Lambda_n$ depend on $\Sigma$ they must be calculated every iteration. Similarly, $S_n$ depends on $\tilde{\theta}$ and needs to be calculated every iteration as well.
+\vfill
+
+#### Gibbs Sampler Exercise
+Now extend our first Gibbs sampler to accomodate multivariate data. This will require simulating multivariate responses.
+\vfill
+\newpage
+
